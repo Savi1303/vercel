@@ -1,19 +1,19 @@
 import puppeteer from 'puppeteer-core';
+import chromium from 'chrome-aws-lambda';
 
 const scrapeData = async (query) => {
-  // Launch browser in headless mode
+  // Launch browser in headless mode using chrome-aws-lambda's executablePath
   const browser = await puppeteer.launch({
     headless: true,
-    executablePath: '/usr/bin/chromium-browser', // Vercel’s required Chromium executable
-    args: ['--no-sandbox', '--disable-setuid-sandbox'], // Flags for serverless environments like Vercel
+    executablePath: await chromium.executablePath, // Get the executablePath from chrome-aws-lambda
+    args: chromium.args, // Pass the required args for serverless environments
+    defaultViewport: chromium.defaultViewport, // Default viewport for the browser
   });
 
   const page = await browser.newPage();
-
   const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
 
   await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-
   await page.waitForSelector('.b_algo');
 
   const result = await page.evaluate(() => {
