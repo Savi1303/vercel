@@ -5,7 +5,7 @@ const scrapeData = async (query) => {
   try {
     // Launch the browser using chrome-aws-lambda's path and settings
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       executablePath: await chromium.executablePath, // Use chrome-aws-lambda's path to Chromium
       args: chromium.args, // Add the required arguments for serverless environments
       defaultViewport: chromium.defaultViewport, // Set a default viewport for the page
