@@ -1,14 +1,10 @@
-import puppeteer from 'puppeteer-core'; // Use puppeteer-core to avoid bundling Chromium
-import chromium from 'chrome-aws-lambda'; // Import chrome-aws-lambda for serverless compatibility
+import puppeteer from 'puppeteer'; // Use full puppeteer, which bundles Chromium
 
 const scrapeData = async (query) => {
   try {
-    // Launch the browser using chrome-aws-lambda's path and settings
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: await chromium.executablePath, // Use chrome-aws-lambda's path to Chromium
-      args: chromium.args, // Add the required arguments for serverless environments
-      defaultViewport: chromium.defaultViewport, // Set a default viewport for the page
+      args: ['--no-sandbox', '--disable-setuid-sandbox'], // Required for serverless
     });
 
     const page = await browser.newPage();
