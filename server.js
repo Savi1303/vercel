@@ -1,19 +1,20 @@
+// server.js
 import express from 'express';
 import puppeteer from 'puppeteer';
 import cors from 'cors';
 
 const app = express();
-const port = process.env.PORT || 3100;  // Use process.env.PORT if available, else fallback to 3100
+const port = process.env.PORT || 3100;  // Use environment variable for port (for Render, Heroku, etc.)
 
 app.use(cors());
 app.use(express.json());
 
-// Function to scrape data using Puppeteer
+// Scraping logic
 const scrapeData = async (query) => {
-  // Your Puppeteer scraping logic here
+  // Puppeteer scraping logic
 };
 
-// Endpoint to handle the scrape request
+// API route to handle scrape request
 app.post('/scrape', async (req, res) => {
   const { query } = req.body;
 
@@ -29,7 +30,7 @@ app.post('/scrape', async (req, res) => {
   }
 });
 
-// Start the server and listen on the specified port
+// Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
