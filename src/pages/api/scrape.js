@@ -1,16 +1,20 @@
-import puppeteer from 'puppeteer'; // Use the regular puppeteer package
+import puppeteer from 'puppeteer-core'; // Use puppeteer-core to avoid bundling Chromium
+import chromium from 'chrome-aws-lambda'; // Import chrome-aws-lambda for serverless compatibility
 
 const scrapeData = async (query) => {
+  // Launch the browser using chrome-aws-lambda's path and settings
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: await chromium.executablePath, // Use chrome-aws-lambda's path to Chromium
+    args: chromium.args, // Add the required arguments for serverless environments
+    defaultViewport: chromium.defaultViewport, // Set a default viewport for the page
   });
 
   const page = await browser.newPage();
   const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
 
   await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.b_algo');
+  await page.waitForSelector('.b_algo'); // Wait for search results
 
   const result = await page.evaluate(() => {
     const firstResultElement = document.querySelector('.b_algo');
