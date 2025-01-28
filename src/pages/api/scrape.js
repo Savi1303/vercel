@@ -2,83 +2,87 @@ import puppeteer from 'puppeteer-core'; // Use puppeteer-core to avoid bundling 
 import chromium from 'chrome-aws-lambda'; // Import chrome-aws-lambda for serverless compatibility
 
 const scrapeData = async (query) => {
-  // Launch the browser using chrome-aws-lambda's path and settings
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: await chromium.executablePath, // Use chrome-aws-lambda's path to Chromium
-    args: chromium.args, // Add the required arguments for serverless environments
-    defaultViewport: chromium.defaultViewport, // Set a default viewport for the page
-  });
-
-  const page = await browser.newPage();
-  const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-
-  await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.b_algo'); // Wait for search results
-
-  const result = await page.evaluate(() => {
-    const firstResultElement = document.querySelector('.b_algo');
-    if (!firstResultElement) {
-      return { Name: 'No Result Found', Link: '', hiddenContent: [] };
-    }
-
-    const titleElement = firstResultElement.querySelector('h2');
-    const linkElement = firstResultElement.querySelector('a');
-
-    const Name = titleElement ? titleElement.innerText : 'No Name Found';
-    const Link = linkElement ? linkElement.href : 'No Link Found';
-
-    const visibleContent = Array.from(firstResultElement.querySelectorAll('*'))
-      .filter(el => {
-        const style = window.getComputedStyle(el);
-        return (
-          !el.hasAttribute('aria-hidden') &&
-          style.display !== 'none' &&
-          style.visibility !== 'hidden' &&
-          parseFloat(style.opacity) > 0
-        );
-      })
-      .map(el => el.textContent?.trim())
-      .filter(Boolean);
-
-    const hiddenContent = [];
-    visibleContent.forEach(content => {
-      content = content.replace(/\b(?:http[s]?:\/\/[^\s]+|roblox\.com|wikipedia\.org|www\.wikipedia\.org)\b/g, ''); 
-      content = content.replace(/\[.*?\]/g, ''); 
-      content = content.replace(/,?\s*\(.*?\)/g, ''); 
-      content = content.replace(/…$/, ''); 
-      content = content.replace(/See more/g, '');  
-      content = content.replace(/See all/g, '');  
-      content = content.replace(/From WikipediaContent.*/g, '');  
-      content = content.replace(/Wikipediahttps:\/\/en\.[^\s]+/g, 'Wikipedia');  
-      content = content.replace(/https:\/\/[^\s]+/g, '');  
-      content = content.replace(/Wikipedia › wiki › [^\s]+/g, '');
-
-      if (content && !hiddenContent.includes(content) && content.length > 10) { 
-        hiddenContent.push(content);
-      }
+  try {
+    // Launch the browser using chrome-aws-lambda's path and settings
+    const browser = await puppeteer.launch({
+      headless: false,
+      executablePath: await chromium.executablePath, // Use chrome-aws-lambda's path to Chromium
+      args: chromium.args, // Add the required arguments for serverless environments
+      defaultViewport: chromium.defaultViewport, // Set a default viewport for the page
     });
 
-    if (Link === null ) {
+    const page = await browser.newPage();
+    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.b_algo'); // Wait for search results
+
+    const result = await page.evaluate(() => {
+      const firstResultElement = document.querySelector('.b_algo');
+      if (!firstResultElement) {
+        return { Name: 'No Result Found', Link: '', hiddenContent: [] };
+      }
+
+      const titleElement = firstResultElement.querySelector('h2');
+      const linkElement = firstResultElement.querySelector('a');
+
+      const Name = titleElement ? titleElement.innerText : 'No Name Found';
+      const Link = linkElement ? linkElement.href : 'No Link Found';
+
+      const visibleContent = Array.from(firstResultElement.querySelectorAll('*'))
+        .filter(el => {
+          const style = window.getComputedStyle(el);
+          return (
+            !el.hasAttribute('aria-hidden') &&
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            parseFloat(style.opacity) > 0
+          );
+        })
+        .map(el => el.textContent?.trim())
+        .filter(Boolean);
+
+      const hiddenContent = [];
+      visibleContent.forEach(content => {
+        content = content.replace(/\b(?:http[s]?:\/\/[^\s]+|roblox\.com|wikipedia\.org|www\.wikipedia\.org)\b/g, ''); 
+        content = content.replace(/\[.*?\]/g, ''); 
+        content = content.replace(/,?\s*\(.*?\)/g, ''); 
+        content = content.replace(/…$/, ''); 
+        content = content.replace(/See more/g, '');  
+        content = content.replace(/See all/g, '');  
+        content = content.replace(/From WikipediaContent.*/g, '');  
+        content = content.replace(/Wikipediahttps:\/\/en\.[^\s]+/g, 'Wikipedia');  
+        content = content.replace(/https:\/\/[^\s]+/g, '');  
+        content = content.replace(/Wikipedia › wiki › [^\s]+/g, '');
+
+        if (content && !hiddenContent.includes(content) && content.length > 10) { 
+          hiddenContent.push(content);
+        }
+      });
+
+      if (Link === null ) {
+        return {
+          Name,
+          Link,
+          hiddenContent: hiddenContent.slice(0, 3),
+          isLinkClickable: false,
+        };
+      }
+
       return {
         Name,
         Link,
         hiddenContent: hiddenContent.slice(0, 3),
-        isLinkClickable: false,
+        isLinkClickable: true,
       };
-    }
+    });
 
-    return {
-      Name,
-      Link,
-      hiddenContent: hiddenContent.slice(0, 3),
-      isLinkClickable: true,
-    };
-  });
+    await browser.close();
 
-  await browser.close();
-
-  return result;
+    return result;
+  } catch (error) {
+    throw new Error(`Failed to launch browser process: ${error.message}`);
+  }
 };
 
 export default async function handler(req, res) {
