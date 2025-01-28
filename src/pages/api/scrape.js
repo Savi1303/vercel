@@ -1,13 +1,9 @@
-import puppeteer from 'puppeteer-core';
-import chromium from 'chrome-aws-lambda';
+import puppeteer from 'puppeteer'; // Use the regular puppeteer package
 
 const scrapeData = async (query) => {
-  // Launch browser in headless mode using chrome-aws-lambda's executablePath
   const browser = await puppeteer.launch({
     headless: true,
-    executablePath: await chromium.executablePath, // Get the executablePath from chrome-aws-lambda
-    args: chromium.args, // Pass the required args for serverless environments
-    defaultViewport: chromium.defaultViewport, // Default viewport for the browser
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
   const page = await browser.newPage();
