@@ -1,16 +1,9 @@
-import express from 'express';
+// pages/api/scrape.js
+
 import puppeteer from 'puppeteer';
-import cors from 'cors';
 
-const app = express();
-const port = 3100;
-
-app.use(cors());
-app.use(express.json());
-
-// Function to scrape data using Puppeteer
 const scrapeData = async (query) => {
-  const browser = await puppeteer.launch({ headless: false }); // Headless mode for testing
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
@@ -46,25 +39,25 @@ const scrapeData = async (query) => {
 
     const hiddenContent = [];
     visibleContent.forEach(content => {
-      content = content.replace(/\b(?:http[s]?:\/\/[^\s]+|roblox\.com|wikipedia\.org|www\.wikipedia\.org)\b/g, ''); 
-      content = content.replace(/\[.*?\]/g, ''); 
-      content = content.replace(/,?\s*\(.*?\)/g, ''); 
-      content = content.replace(/…$/, ''); 
-      content = content.replace(/See more/g, '');  
-      content = content.replace(/See all/g, '');  
-      content = content.replace(/From WikipediaContent.*/g, '');  
+      content = content.replace(/\b(?:http[s]?:\/\/[^\s]+|roblox\.com|wikipedia\.org|www\.wikipedia\.org)\b/g, '');
+      content = content.replace(/\[.*?\]/g, '');
+      content = content.replace(/,?\s*\(.*?\)/g, '');
+      content = content.replace(/…$/, '');
+      content = content.replace(/See more/g, '');
+      content = content.replace(/See all/g, '');
+      content = content.replace(/From WikipediaContent.*/g, '');
 
-      content = content.replace(/Wikipediahttps:\/\/en\.[^\s]+/g, 'Wikipedia');  
-      content = content.replace(/https:\/\/[^\s]+/g, '');  
+      content = content.replace(/Wikipediahttps:\/\/en\.[^\s]+/g, 'Wikipedia');
+      content = content.replace(/https:\/\/[^\s]+/g, '');
 
       content = content.replace(/Wikipedia › wiki › [^\s]+/g, '');
 
-      if (content && !hiddenContent.includes(content) && content.length > 10) { 
+      if (content && !hiddenContent.includes(content) && content.length > 10) {
         hiddenContent.push(content);
       }
     });
 
-    if (Link === null ) {
+    if (Link === null) {
       return {
         Name,
         Link,
@@ -86,22 +79,21 @@ const scrapeData = async (query) => {
   return result;
 };
 
-// Endpoint to handle the scrape request
-app.post('/scrape', async (req, res) => {
-  const { query } = req.body;
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    const { query } = req.body;
 
-  if (!query || query.trim() === '') {
-    return res.status(400).json({ error: 'Query is required' });
+    if (!query || query.trim() === '') {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+
+    try {
+      const data = await scrapeData(query);
+      return res.json(data);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to scrape data', details: error.message });
+    }
+  } else {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
-
-  try {
-    const data = await scrapeData(query);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to scrape data', details: error.message });
-  }
-});
-
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+}
