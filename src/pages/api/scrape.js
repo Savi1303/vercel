@@ -1,14 +1,13 @@
-import puppeteer from 'puppeteer-core';
+import puppeteer from 'puppeteer';
 
 const scrapeData = async (query) => {
   const browser = await puppeteer.launch({
-    headless: true, // Headless mode is necessary in serverless environments
-    executablePath: '/usr/bin/chromium', // Vercel's provided Chromium binary path
+    headless: true, // Headless mode for serverless environments
   });
-  
+
   const page = await browser.newPage();
   const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-  
+
   await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.b_algo');
 
