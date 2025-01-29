@@ -1,9 +1,12 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import Chromium from '@sparticuz/chromium';
 
 const scrapeData = async (query) => {
   const browser = await puppeteer.launch({
-    headless: true, // Headless mode for serverless environments
-    executablePath: `/home/sbx_user1051/.cache/puppeteer`|| null
+    args: Chromium.args,
+    defaultViewport: Chromium.defaultViewport,
+    executablePath: await Chromium.executablePath(),
+    headless: Chromium.headless,
   });
 
   const page = await browser.newPage();
