@@ -6,7 +6,7 @@ const scrapeData = async (query) => {
     args: Chromium.args,
     defaultViewport: Chromium.defaultViewport,
     executablePath: await Chromium.executablePath(),
-    headless: Chromium.headless,
+    headless: false,
   });
 
   const page = await browser.newPage();
