@@ -1,15 +1,15 @@
-// pages/api/scrape.js
-
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 
 const scrapeData = async (query) => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true, // Headless mode is necessary in serverless environments
+    executablePath: '/usr/bin/chromium', // Vercel's provided Chromium binary path
+  });
+  
   const page = await browser.newPage();
-
   const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-
+  
   await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-
   await page.waitForSelector('.b_algo');
 
   const result = await page.evaluate(() => {
@@ -39,25 +39,25 @@ const scrapeData = async (query) => {
 
     const hiddenContent = [];
     visibleContent.forEach(content => {
-      content = content.replace(/\b(?:http[s]?:\/\/[^\s]+|roblox\.com|wikipedia\.org|www\.wikipedia\.org)\b/g, '');
-      content = content.replace(/\[.*?\]/g, '');
-      content = content.replace(/,?\s*\(.*?\)/g, '');
-      content = content.replace(/…$/, '');
-      content = content.replace(/See more/g, '');
-      content = content.replace(/See all/g, '');
-      content = content.replace(/From WikipediaContent.*/g, '');
+      content = content.replace(/\b(?:http[s]?:\/\/[^\s]+|roblox\.com|wikipedia\.org|www\.wikipedia\.org)\b/g, ''); 
+      content = content.replace(/\[.*?\]/g, ''); 
+      content = content.replace(/,?\s*\(.*?\)/g, ''); 
+      content = content.replace(/…$/, ''); 
+      content = content.replace(/See more/g, '');  
+      content = content.replace(/See all/g, '');  
+      content = content.replace(/From WikipediaContent.*/g, '');  
 
-      content = content.replace(/Wikipediahttps:\/\/en\.[^\s]+/g, 'Wikipedia');
-      content = content.replace(/https:\/\/[^\s]+/g, '');
+      content = content.replace(/Wikipediahttps:\/\/en\.[^\s]+/g, 'Wikipedia');  
+      content = content.replace(/https:\/\/[^\s]+/g, '');  
 
       content = content.replace(/Wikipedia › wiki › [^\s]+/g, '');
 
-      if (content && !hiddenContent.includes(content) && content.length > 10) {
+      if (content && !hiddenContent.includes(content) && content.length > 10) { 
         hiddenContent.push(content);
       }
     });
 
-    if (Link === null) {
+    if (Link === null ) {
       return {
         Name,
         Link,
@@ -79,6 +79,7 @@ const scrapeData = async (query) => {
   return result;
 };
 
+// API route handler
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { query } = req.body;
@@ -89,11 +90,11 @@ export default async function handler(req, res) {
 
     try {
       const data = await scrapeData(query);
-      return res.json(data);
+      res.status(200).json(data);
     } catch (error) {
-      return res.status(500).json({ error: 'Failed to scrape data', details: error.message });
+      res.status(500).json({ error: 'Failed to scrape data', details: error.message });
     }
   } else {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    res.status(405).json({ error: 'Method Not Allowed' });
   }
 }
