@@ -1,10 +1,9 @@
 import puppeteer from 'puppeteer';
-import { ChromeLauncher } from 'puppeteer/src/puppeteer.js';
 
 const scrapeData = async (query) => {
   const browser = await puppeteer.launch({
     headless: true, // Headless mode for serverless environments
-    executablePath: `/home/sbx_user1051/.cache/puppeteer`|| ChromeLauncher
+    executablePath: `/home/sbx_user1051/.cache/puppeteer`|| null
   });
 
   const page = await browser.newPage();
